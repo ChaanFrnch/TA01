@@ -7,6 +7,7 @@ program euler2d
   use HydroParameters  ! get routines initHydroParameters, printHydroParameters
   use HydroRun         ! get computing routines and utilities (init, boundaries, ...)
   use Monitoring       ! get timer routines
+	use Partitioner
   use mpi              ! for parallelization
 
   implicit none

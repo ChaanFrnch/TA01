@@ -30,6 +30,7 @@ OBJ = \
 	m_HydroUtils.o \
 	m_Monitoring.o \
 	m_HydroRun.o \
+	m_Partitioner.o \
 	main.o
 
 euler2d: $(OBJ)
