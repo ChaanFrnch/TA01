@@ -7,18 +7,25 @@ program euler2d
   use HydroParameters  ! get routines initHydroParameters, printHydroParameters
   use HydroRun         ! get computing routines and utilities (init, boundaries, ...)
   use Monitoring       ! get timer routines
+  use mpi              ! for parallelization
 
   implicit none
 
   real   (fp_kind)  :: t=0
   real   (fp_kind)  :: dt=0
+  integer   :: nbTask, myRank, ierr
+
+  call MPI_Init(ierr)
+
+  call MPI_COMM_SIZE(MPI_COMM_WORLD, nbTask, ierr)
+  call MPI_COMM_RANK(MPI_COMM_WORLD, myRank, ierr)
 
   call initHydroParameters()
   call printHydroParameters()
 
   ! init domain
   call initHydroRun()
-  call compute_dt( dt, modulo(nStep,2) )
+  call compute_dt( dt, modulo(nStep,2) ) ! pas adaptatif, calcule a chaque fois pour stabilite
   write(*,*) 'Initial value for dt ',dt
 
   ! init boundaries
@@ -29,9 +36,9 @@ program euler2d
   call timerStart(total_timer)
 
   ! main loop
-  do while (t < tEnd .and. nStep < nStepmax)
+  do while (t < tEnd .and. nStep < nStepmax) ! boucle sur le temps et le nb de pas
      ! output
-     if ( modulo(nStep,nOutput) == 0) then 
+     if ( modulo(nStep,nOutput) == 0) then ! impression tous les nOutput
         write(*,*) 'Output results at step ',nStep, 'dt ',dt
         call timerStart(io_timer)
         call saveVTK(u,nStep)
@@ -61,5 +68,6 @@ program euler2d
 
   write(*,*) 'Perf             : ',nStep*isize*jsize/total_timer%elapsed, ' number of cell-updates/s'
 
+  call MPI_Finalize(ierr)
 
 end program euler2d
