@@ -2,6 +2,8 @@ module Partitioner
 
   use mpi
 
+
+
 contains
 
   subroutine nbpow2(nbcores,nbpowers)
@@ -21,13 +23,13 @@ contains
 
     end subroutine nbpow2
 
-    subroutine partition(nbcores,nx,ny,mx,my,sizes_x,sizes_y)
+    subroutine partition(nbcores,nx,ny,sizes_x,sizes_y)
 
       implicit none
-      integer,intent(inout) :: nbcores, nx, ny, mx, my
-      integer,intent(out),dimension(:),allocatable :: sizes_x, sizes_y
-      integer :: nbpowers, modu, powx, powy, size_x, size_y, waste_x, waste_y, i
-
+      integer,intent(inout) :: nbcores,nx, ny
+      integer :: nbpowers, modu, powx, powy, mx, my, size_x, size_y, waste_x, waste_y, i
+      !integer,dimension(:),allocatable,intent(inout) :: sizes_x, sizes_y
+      
       call nbpow2(nbcores,nbpowers)
       modu = modulo(nbpowers,2)
       !write(*,*) 'modu is equal to',modu
@@ -46,13 +48,13 @@ contains
       !write(*,*) 'mx is equal to', mx
       !write(*,*) 'my is equal to', my
 
-      allocate (sizes_x(mx))
-      allocate (sizes_y(my))
-
       waste_x = mod(nx,mx)
       size_x = (nx-waste_x)/mx
       waste_y = mod(ny,my)
       size_y = (ny-waste_y)/my
+
+      allocate (sizes_x(mx))
+      allocate (sizes_y(my))
 
       do 10 i=1,mx
         if (waste_x > 0) then

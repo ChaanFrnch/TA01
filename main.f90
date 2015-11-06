@@ -16,19 +16,15 @@ program euler2d
   real   (fp_kind)  :: dt=0
   !integer :: nbpowers, nbcores
   integer :: nbTask, myRank, ierr
+  !integer,dimension(:),allocatable :: sizes_x, sizes_y
 
   call MPI_Init(ierr)
 
   call MPI_COMM_SIZE(MPI_COMM_WORLD, nbTask, ierr)
   call MPI_COMM_RANK(MPI_COMM_WORLD, myRank, ierr)
 
-  call initHydroParameters(nbTask, myRank)
+  call initHydroParameters(nbTask, myRank, sizes_x, sizes_y)
   call printHydroParameters()
-
-  ! partitioner
-  !nbcores = nbTask
-  !call nbpow2(nbcores,nbpowers)
-  !call partition(nbcores,nx,ny,mx,my,sizes_x,sizes_y)
 
   ! init domain
   call initHydroRun()

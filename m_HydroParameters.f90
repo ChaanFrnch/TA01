@@ -62,10 +62,11 @@ module HydroParameters
   integer(int_kind)  ::  nbVar=4  !< number of fields in simulation (density, energy, vx, vy)
   integer(int_kind)  :: implementationVersion=0 !< triggers which implementation to use (currently 2 versions)
   integer :: coord_x, coord_y 
+  integer :: size_x_max, size_y_max
 
   contains
 
-    subroutine initHydroParameters(nbTask, myRank)
+    subroutine initHydroParameters(nbTask, myRank, sizes_x, sizes_y)
       
       implicit none
 
@@ -77,7 +78,7 @@ module HydroParameters
       integer :: size_x
       !! partitioner parameters
       integer :: nbcores, mx, my
-      integer,dimension(:),allocatable :: sizes_x, sizes_y
+      integer,dimension(:), intent(out) :: sizes_x, sizes_y
    
       ! declare namelist
       namelist/run/tEnd,nStepmax,nOutput
@@ -117,7 +118,8 @@ module HydroParameters
       nbcores = nbTask
       call partition (nbcores,nx,ny,mx,my,sizes_x,sizes_y)
       
-      size_x = size(sizes_x)
+      size_x_max = size(sizes_x)
+      size_y_max = size(sizes_y)
       coord_x = modulo(myRank,size_x)
       coord_y = (myRank-coord_x)/size_x
       

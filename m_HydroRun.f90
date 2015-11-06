@@ -577,24 +577,27 @@ contains
     real(fp_kind) :: sign
 
     ! boundary xmin
-    do iVar=1,nbVar
-       do i=1,ghostWidth
-          sign=1.0
-          if(boundary_type_xmin==1)then
-             i0=2*ghostWidth+1-i
-             if(iVar==IU)sign=-1.0
-          else if(boundary_type_xmin==2)then
-             i0=ghostWidth+1
-          else ! periodic
-             i0=nx+i
-          end if
-          do j=ghostWidth+1,jsize-ghostWidth
-             data(i,j,iVar)=data(i0,j,iVar)*sign
+    if(coord_x==1) then
+       do iVar=1,nbVar
+          do i=1,ghostWidth
+             sign=1.0
+             if(boundary_type_xmin==1)then
+                i0=2*ghostWidth+1-i
+                if(iVar==IU)sign=-1.0
+             else if(boundary_type_xmin==2)then
+                i0=ghostWidth+1
+             else ! periodic
+                i0=nx+i
+             end if
+             do j=ghostWidth+1,jsize-ghostWidth
+                data(i,j,iVar)=data(i0,j,iVar)*sign
+             end do
           end do
        end do
-    end do
+    end if
 
     ! boundary xmax
+    if(coord_x==size_x_max) then
     do iVar=1,nbVar
        do i=nx+ghostWidth+1,nx+2*ghostWidth
           sign=1.0
@@ -611,6 +614,7 @@ contains
           end do
        end do
     end do
+    end if
 
     ! boundary ymin
     do iVar=1,nbVar
