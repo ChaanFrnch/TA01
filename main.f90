@@ -7,14 +7,16 @@ program euler2d
   use HydroParameters  ! get routines initHydroParameters, printHydroParameters
   use HydroRun         ! get computing routines and utilities (init, boundaries, ...)
   use Monitoring       ! get timer routines
-	use Partitioner
+  use Partitioner      ! partition of the domain
   use mpi              ! for parallelization
 
   implicit none
 
   real   (fp_kind)  :: t=0
   real   (fp_kind)  :: dt=0
-  integer   :: nbTask, myRank, ierr
+  integer :: nbpowers, nbcores
+  integer :: nbTask, myRank, ierr, mx, my
+  integer,dimension(:),allocatable :: sizes_x, sizes_y
 
   call MPI_Init(ierr)
 
@@ -23,6 +25,11 @@ program euler2d
 
   call initHydroParameters()
   call printHydroParameters()
+
+  ! partitioner
+  nbcores = nbTask
+  call nbpow2(nbcores,nbpowers)
+  call partition(nbTask,nx,ny,mx,my,sizes_x,sizes_y)
 
   ! init domain
   call initHydroRun()
