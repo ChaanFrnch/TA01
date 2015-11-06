@@ -5,6 +5,8 @@ module HydroParameters
 
   use HydroPrecision
   use HydroConstants
+  use Partitioner
+  use mpi
 
   !! run parameters
   integer(int_kind ) :: nStepmax !< maximun number of time steps.
@@ -20,8 +22,10 @@ module HydroParameters
   integer(int_kind) :: jmin=0   !< index minimum at Y border
   integer(int_kind) :: jmax=0   !< index maximum at Y border
 
-  integer(int_kind) :: isize=0  !< total size (in cell unit) along X direction with ghosts.
-  integer(int_kind) :: jsize=0  !< total size (in cell unit) along Y direction with ghosts.
+  integer(int_kind) :: isize_tot=0  !< total size (in cell unit) along X direction with ghosts.
+  integer(int_kind) :: jsize_tot=0  !< total size (in cell unit) along Y direction with ghosts.
+  integer(int_kind) :: isize=0  !< local size (in cell unit) along X direction with ghosts.
+  integer(int_kind) :: jsize=0  !< local size (in cell unit) along Y direction with ghosts.
 
   real(fp_kind)   :: xmin=0.0
   real(fp_kind)   :: xmax=1.0
@@ -57,17 +61,23 @@ module HydroParameters
   !! other parameters
   integer(int_kind)  ::  nbVar=4  !< number of fields in simulation (density, energy, vx, vy)
   integer(int_kind)  :: implementationVersion=0 !< triggers which implementation to use (currently 2 versions)
+  integer :: coord_x, coord_y 
 
-  
   contains
 
-    subroutine initHydroParameters()
+    subroutine initHydroParameters(nbTask, myRank)
       
       implicit none
 
       ! local variables
+      integer, intent(in) :: nbTask, myRank
+      !integer, intent(in) :: coord_x, coord_y
       integer(int_kind) :: narg
       character(LEN=80) :: inputFilename
+      integer :: size_x
+      !! partitioner parameters
+      integer :: nbcores, mx, my
+      integer,dimension(:),allocatable :: sizes_x, sizes_y
    
       ! declare namelist
       namelist/run/tEnd,nStepmax,nOutput
@@ -101,8 +111,19 @@ module HydroParameters
       imax = nx+2*ghostWidth
       jmax = ny+2*ghostWidth
 
-      isize = imax - imin + 1
-      jsize = jmax - jmin + 1
+      isize_tot = imax - imin + 1
+      jsize_tot = jmax - jmin + 1
+
+      nbcores = nbTask
+      call partition (nbcores,nx,ny,mx,my,sizes_x,sizes_y)
+      
+      size_x = size(sizes_x)
+      coord_x = modulo(myRank,size_x)
+      coord_y = (myRank-coord_x)/size_x
+      
+      isize = sizes_x(coord_x+1) + 2*ghostwidth
+      jsize = sizes_y(coord_y+1) + 2*ghostwidth
+      write(*,*) 'I am proc ', myRank, 'and isize = ', isize, 'and jzise = ', jsize
 
       dx = (xmax - xmin) / nx
       dy = (ymax - ymin) / ny

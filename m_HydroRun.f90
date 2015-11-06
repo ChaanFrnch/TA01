@@ -20,10 +20,9 @@ module HydroRun
 contains
 
   ! !!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine initHydroRun
+  subroutine initHydroRun()
 
     implicit none
-
 
     ! memory allocation
     allocate( u (isize, jsize, nbVar) )

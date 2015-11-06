@@ -17,7 +17,7 @@ contains
         if (nbcores <= 1) exit
         nbpowers = nbpowers + 1
       end do
-      write(*,*) 'The numbers of processors is equal to 2 to the power ', nbpowers
+      !write(*,*) 'The numbers of processors is equal to 2 to the power ', nbpowers
 
     end subroutine nbpow2
 
@@ -30,7 +30,7 @@ contains
 
       call nbpow2(nbcores,nbpowers)
       modu = modulo(nbpowers,2)
-      write(*,*) 'modu is equal to',modu
+      !write(*,*) 'modu is equal to',modu
 
       if ( modu == 1 ) then 
         powx = (nbpowers+1)/2
@@ -43,8 +43,8 @@ contains
       mx = 2**powx
       my = 2**powy
 
-      write(*,*) 'mx is equal to', mx
-      write(*,*) 'my is equal to', my
+      !write(*,*) 'mx is equal to', mx
+      !write(*,*) 'my is equal to', my
 
       allocate (sizes_x(mx))
       allocate (sizes_y(my))
