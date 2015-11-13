@@ -14,6 +14,7 @@ program euler2d
 
   real   (fp_kind)  :: t=0
   real   (fp_kind)  :: dt=0
+  real   (fp_kind)  :: dt_min=0
   !integer :: nbpowers, nbcores
   integer :: nbTask, myRank, ierr
   !integer,dimension(:),allocatable :: sizes_x, sizes_y
@@ -23,7 +24,7 @@ program euler2d
   call MPI_COMM_SIZE(MPI_COMM_WORLD, nbTask, ierr)
   call MPI_COMM_RANK(MPI_COMM_WORLD, myRank, ierr)
 
-  call initHydroParameters(nbTask, myRank, sizes_x, sizes_y)
+  call initHydroParameters(nbTask, myRank)
   call printHydroParameters()
 
   ! init domain
@@ -50,6 +51,12 @@ program euler2d
      
      ! compute dt
      call compute_dt( dt, modulo(nStep,2) )
+     ! determine dt_min
+     call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
+     !write(*,*) 'I am proc ', myRank, 'and dt_min = ', dt_min
+     call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
+     dt = dt_min
+     !write(*,*) 'I am proc ', myRank, 'and dt = ', dt
 
      ! perform one step integration
      call godunov_unsplit(dt)

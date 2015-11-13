@@ -7,6 +7,7 @@ module HydroRun
   use HydroConstants
   use HydroParameters
   use HydroUtils
+  use mpi
 
   ! defines data arrays
   real(fp_kind), dimension(:,:,:), allocatable :: u,u2 !< conservative variables
@@ -501,6 +502,7 @@ contains
     ! dummy variables
     real   (fp_kind), dimension(isize, jsize, nbVar), intent(inout) :: data
     integer(int_kind) :: iStep
+    !integer, intent(in) :: myRank
 
     ! local variables
     integer :: j,iVar
@@ -510,6 +512,8 @@ contains
     character(1), parameter :: endl  = char(10)  ! end of line
     character(500) :: charBuf
     character(7) :: floatType
+
+    !if(myRank==0) then
 
     if (useDoublePrecision()) then
        write(floatType,'(a)') 'Float64'
@@ -560,6 +564,8 @@ contains
     write(10,'(a)') '</VTKFile>'//endl
 
     close(10)
+ 
+    !end if
 
   end subroutine saveVTK
 
@@ -594,6 +600,14 @@ contains
              end do
           end do
        end do
+    else
+       do iVar=1,nbVar
+          do i=1,ghostWidth
+             do j=ghostWidth+1,jsize-ghostWidth
+                data(i,j,iVar)=0
+             end do
+          end do
+       end do
     end if
 
     ! boundary xmax
@@ -614,9 +628,18 @@ contains
           end do
        end do
     end do
+    else
+       do iVar=1,nbVar
+          do i=nx+ghostWidth+1,nx+2*ghostWidth
+             do j=ghostWidth+1,jsize-ghostWidth
+                data(i,j,iVar)=0
+             end do
+          end do
+       end do
     end if
 
     ! boundary ymin
+    if(coord_y==1) then
     do iVar=1,nbVar
        do j=1,ghostWidth
           sign=1.0
@@ -633,8 +656,18 @@ contains
           end do
        end do
     end do
+    else
+       do iVar=1,nbVar
+          do j=1,ghostWidth
+             do i=ghostWidth+1,isize-ghostWidth
+                data(i,j,iVar)=0
+             end do
+          end do
+       end do
+    end if
 
     ! boundary ymax
+    if(coord_y==size_y_max) then
     do iVar=1,nbVar
        do j=ny+ghostWidth+1,ny+2*ghostWidth
           sign=1.0
@@ -651,6 +684,15 @@ contains
           end do
        end do
     end do
+    else
+       do iVar=1,nbVar
+          do j=ny+ghostWidth+1,ny+2*ghostWidth
+             do i=ghostWidth+1,isize-ghostWidth
+                data(i,j,iVar)=0
+             end do
+          end do
+       end do
+    end if
 
   end subroutine make_boundaries
 

@@ -2,7 +2,7 @@ module Partitioner
 
   use mpi
 
-
+  integer,dimension(:),allocatable :: sizes_x, sizes_y
 
 contains
 
@@ -23,12 +23,12 @@ contains
 
     end subroutine nbpow2
 
-    subroutine partition(nbcores,nx,ny,sizes_x,sizes_y)
+    subroutine partition(nbcores,nx,ny)
 
       implicit none
-      integer,intent(inout) :: nbcores,nx, ny
+      integer,intent(inout) :: nbcores, nx, ny
       integer :: nbpowers, modu, powx, powy, mx, my, size_x, size_y, waste_x, waste_y, i
-      !integer,dimension(:),allocatable,intent(inout) :: sizes_x, sizes_y
+
       
       call nbpow2(nbcores,nbpowers)
       modu = modulo(nbpowers,2)

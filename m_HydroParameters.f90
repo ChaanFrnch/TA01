@@ -66,7 +66,7 @@ module HydroParameters
 
   contains
 
-    subroutine initHydroParameters(nbTask, myRank, sizes_x, sizes_y)
+    subroutine initHydroParameters(nbTask, myRank)
       
       implicit none
 
@@ -75,10 +75,10 @@ module HydroParameters
       !integer, intent(in) :: coord_x, coord_y
       integer(int_kind) :: narg
       character(LEN=80) :: inputFilename
-      integer :: size_x
+      !integer :: size_x
       !! partitioner parameters
-      integer :: nbcores, mx, my
-      integer,dimension(:), intent(out) :: sizes_x, sizes_y
+      integer :: nbcores
+      !integer,dimension(:), intent(out) :: sizes_x, sizes_y
    
       ! declare namelist
       namelist/run/tEnd,nStepmax,nOutput
@@ -116,12 +116,12 @@ module HydroParameters
       jsize_tot = jmax - jmin + 1
 
       nbcores = nbTask
-      call partition (nbcores,nx,ny,mx,my,sizes_x,sizes_y)
+      call partition (nbcores,nx,ny)
       
       size_x_max = size(sizes_x)
       size_y_max = size(sizes_y)
-      coord_x = modulo(myRank,size_x)
-      coord_y = (myRank-coord_x)/size_x
+      coord_x = modulo(myRank,size_x_max)
+      coord_y = (myRank-coord_x)/size_x_max
       
       isize = sizes_x(coord_x+1) + 2*ghostwidth
       jsize = sizes_y(coord_y+1) + 2*ghostwidth

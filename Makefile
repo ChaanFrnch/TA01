@@ -24,13 +24,14 @@
 
 SRCDIR = .
 OBJ = \
+  m_Partitioner.o \
 	m_HydroPrecision.o \
 	m_HydroConstants.o \
 	m_HydroParameters.o \
 	m_HydroUtils.o \
 	m_Monitoring.o \
+  m_Communication.o \
 	m_HydroRun.o \
-	m_Partitioner.o \
 	main.o
 
 euler2d: $(OBJ)
