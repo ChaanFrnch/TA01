@@ -7,6 +7,7 @@ module HydroRun
   use HydroConstants
   use HydroParameters
   use HydroUtils
+  use Communication
   use mpi
 
   ! defines data arrays
@@ -582,8 +583,11 @@ contains
     integer ::i,j,i0,j0,iVar
     real(fp_kind) :: sign
 
+    call updateS(data)
+    call comm
+
     ! boundary xmin
-    if(coord_x==1) then
+    if(coord_x==0) then
        do iVar=1,nbVar
           do i=1,ghostWidth
              sign=1.0
@@ -596,24 +600,25 @@ contains
                 i0=nx+i
              end if
              do j=ghostWidth+1,jsize-ghostWidth
-                data(i,j,iVar)=data(i0,j,iVar)*sign
+                !data(i,j,iVar)=data(i0,j,iVar)*sign
              end do
           end do
        end do
     else
        do iVar=1,nbVar
+
           do i=1,ghostWidth
-             do j=ghostWidth+1,jsize-ghostWidth
-                data(i,j,iVar)=0
+             do j=1+ghostWidth,jsize-ghostWidth
+                !data(i,j,iVar)=leftR(i,j-ghostWidth,iVar)
              end do
           end do
        end do
     end if
 
     ! boundary xmax
-    if(coord_x==size_x_max) then
+    if(coord_x==size_x_max-1) then
     do iVar=1,nbVar
-       do i=nx+ghostWidth+1,nx+2*ghostWidth
+       do i=isize+ghostWidth+1,isize+2*ghostWidth
           sign=1.0
           if(boundary_type_xmax==1)then
              i0=2*nx+2*ghostWidth+1-i
@@ -630,16 +635,16 @@ contains
     end do
     else
        do iVar=1,nbVar
-          do i=nx+ghostWidth+1,nx+2*ghostWidth
-             do j=ghostWidth+1,jsize-ghostWidth
-                data(i,j,iVar)=0
+          do i=1+isize+ghostWidth,isize+2*ghostWidth
+             do j=1+ghostWidth,jsize-ghostWidth
+                !data(i,j,iVar)=rightR(i-nx-ghostWidth,j-ghostWidth,iVar)
              end do
           end do
        end do
     end if
 
     ! boundary ymin
-    if(coord_y==1) then
+    if(coord_y==0) then
     do iVar=1,nbVar
        do j=1,ghostWidth
           sign=1.0
@@ -659,17 +664,17 @@ contains
     else
        do iVar=1,nbVar
           do j=1,ghostWidth
-             do i=ghostWidth+1,isize-ghostWidth
-                data(i,j,iVar)=0
+             do i=1+ghostwidth,isize-ghostWidth
+                !data(i,j,iVar)=topR(i-ghostWidth,j,iVar)
              end do
           end do
        end do
     end if
 
     ! boundary ymax
-    if(coord_y==size_y_max) then
+    if(coord_y==size_y_max-1) then
     do iVar=1,nbVar
-       do j=ny+ghostWidth+1,ny+2*ghostWidth
+       do j=jsize+ghostWidth+1,jsize+2*ghostWidth
           sign=1.0
           if(boundary_type_ymax==1)then
              j0=2*ny+2*ghostWidth+1-j
@@ -686,9 +691,9 @@ contains
     end do
     else
        do iVar=1,nbVar
-          do j=ny+ghostWidth+1,ny+2*ghostWidth
-             do i=ghostWidth+1,isize-ghostWidth
-                data(i,j,iVar)=0
+          do j=1+jsize+ghostwidth,jsize+2*ghostWidth
+             do i=1+ghostwidth,isize-ghostWidth
+                !data(i,j,iVar)=bottomR(i-ghostWidth,j-ny-ghostwidth,iVar)
              end do
           end do
        end do

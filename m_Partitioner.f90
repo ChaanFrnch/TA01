@@ -63,7 +63,7 @@ contains
         else 
           sizes_x(i) = size_x
         end if
-        write(*,*) 'The size for x is', size_x
+        !write(*,*) 'The size for x is', size_x
       10 continue
 
       do 20 i=1,my
@@ -73,7 +73,7 @@ contains
         else
           sizes_y(i) = size_y
         end if
-        write(*,*) 'The size for y is', size_y
+        !write(*,*) 'The size for y is', size_y
       20 continue
 
     end subroutine partition

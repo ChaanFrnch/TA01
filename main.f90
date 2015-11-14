@@ -8,6 +8,7 @@ program euler2d
   use HydroRun         ! get computing routines and utilities (init, boundaries, ...)
   use Monitoring       ! get timer routines
   use Partitioner      ! partition of the domain
+  use Communication    ! for parallel communications
   use mpi              ! for parallelization
 
   implicit none
@@ -33,6 +34,7 @@ program euler2d
   write(*,*) 'Initial value for dt ',dt
 
   ! init boundaries
+  call initS
   call make_boundaries(u)
 
   ! start computation
@@ -44,11 +46,11 @@ program euler2d
      ! output
      if ( modulo(nStep,nOutput) == 0) then ! impression tous les nOutput
         write(*,*) 'Output results at step ',nStep, 'dt ',dt
-        call timerStart(io_timer)
-        call saveVTK(u,nStep)
-        call timerStop(io_timer)
+        !call timerStart(io_timer)
+        !call saveVTK(u,nStep)
+        !call timerStop(io_timer)
      end if
-     
+
      ! compute dt
      call compute_dt( dt, modulo(nStep,2) )
      ! determine dt_min
