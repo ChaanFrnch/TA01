@@ -63,6 +63,7 @@ module HydroParameters
   integer(int_kind)  :: implementationVersion=0 !< triggers which implementation to use (currently 2 versions)
   integer :: coord_x, coord_y 
   integer :: size_x_max, size_y_max
+  integer :: decx, decy
 
   contains
 
@@ -78,6 +79,7 @@ module HydroParameters
       !integer :: size_x
       !! partitioner parameters
       integer :: nbcores
+      integer :: i, sum
       !integer,dimension(:), intent(out) :: sizes_x, sizes_y
    
       ! declare namelist
@@ -125,7 +127,28 @@ module HydroParameters
       
       isize = sizes_x(coord_x+1) + 2*ghostwidth
       jsize = sizes_y(coord_y+1) + 2*ghostwidth
-      write(*,*) 'I am proc ', myRank, 'and isize = ', isize, 'and jzise = ', jsize
+      !write(*,*) 'I am proc ', myRank, 'and isize = ', isize, 'and jzise = ', jsize
+
+      if(coord_x == 0) then
+         decx = 0
+      else
+        sum = 0
+        do i = 1,coord_x
+           sum = sum + sizes_x(i)
+        end do
+        decx = sum
+      end if
+
+      if(coord_y == 0) then
+         decy = 0
+      else
+        sum = 0
+        do i = 1,coord_y
+           sum = sum + sizes_y(i)
+        end do
+        decy = sum
+      end if
+      !write(*,*) 'I am proc ', myRank, 'and decx = ', decx, 'and decy = ', decy
 
       dx = (xmax - xmin) / nx
       dy = (ymax - ymin) / ny

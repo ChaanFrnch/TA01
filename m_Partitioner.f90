@@ -3,6 +3,7 @@ module Partitioner
   use mpi
 
   integer,dimension(:),allocatable :: sizes_x, sizes_y
+  !integer :: decx, decy
 
 contains
 

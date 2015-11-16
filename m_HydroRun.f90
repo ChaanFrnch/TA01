@@ -600,7 +600,7 @@ contains
                 i0=nx+i
              end if
              do j=ghostWidth+1,jsize-ghostWidth
-                !data(i,j,iVar)=data(i0,j,iVar)*sign
+                data(i,j,iVar)=data(i0,j,iVar)*sign
              end do
           end do
        end do
@@ -609,7 +609,7 @@ contains
 
           do i=1,ghostWidth
              do j=1+ghostWidth,jsize-ghostWidth
-                !data(i,j,iVar)=leftR(i,j-ghostWidth,iVar)
+                data(i,j,iVar)=leftR(i,j-ghostWidth,iVar)
              end do
           end do
        end do
@@ -637,7 +637,7 @@ contains
        do iVar=1,nbVar
           do i=1+isize+ghostWidth,isize+2*ghostWidth
              do j=1+ghostWidth,jsize-ghostWidth
-                !data(i,j,iVar)=rightR(i-nx-ghostWidth,j-ghostWidth,iVar)
+                data(i,j,iVar)=rightR(i-nx-ghostWidth,j-ghostWidth,iVar)
              end do
           end do
        end do
@@ -665,7 +665,7 @@ contains
        do iVar=1,nbVar
           do j=1,ghostWidth
              do i=1+ghostwidth,isize-ghostWidth
-                !data(i,j,iVar)=topR(i-ghostWidth,j,iVar)
+                data(i,j,iVar)=topR(i-ghostWidth,j,iVar)
              end do
           end do
        end do
@@ -693,7 +693,7 @@ contains
        do iVar=1,nbVar
           do j=1+jsize+ghostwidth,jsize+2*ghostWidth
              do i=1+ghostwidth,isize-ghostWidth
-                !data(i,j,iVar)=bottomR(i-ghostWidth,j-ny-ghostwidth,iVar)
+                data(i,j,iVar)=bottomR(i-ghostWidth,j-ny-ghostwidth,iVar)
              end do
           end do
        end do
