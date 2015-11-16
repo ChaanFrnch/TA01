@@ -584,7 +584,9 @@ contains
     real(fp_kind) :: sign
 
     call updateS(data)
+    write(*,*) 'update des S reussie'
     call comm
+    write(*,*) 'comm reussie'
 
     ! boundary xmin
     if(coord_x==0) then

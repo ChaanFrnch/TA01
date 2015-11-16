@@ -18,6 +18,7 @@ program euler2d
   real   (fp_kind)  :: dt_min=0
   !integer :: nbpowers, nbcores
   integer :: nbTask, myRank, ierr
+  integer,dimension(MPI_STATUS_SIZE)   :: mpistat
   !integer,dimension(:),allocatable :: sizes_x, sizes_y
 
   call MPI_Init(ierr)
@@ -26,7 +27,7 @@ program euler2d
   call MPI_COMM_RANK(MPI_COMM_WORLD, myRank, ierr)
 
   call initHydroParameters(nbTask, myRank)
-  call printHydroParameters()
+  !call printHydroParameters()
 
   ! init domain
   call initHydroRun()
@@ -35,12 +36,15 @@ program euler2d
 
   ! init boundaries
   call initS
+  write(*,*) 'initialisation des S reussie'
   call make_boundaries(u)
+  write(*,*) 'premier make_boundaries reussi'
 
   ! start computation
   write(*,*) 'Start computation....'
   call timerStart(total_timer)
 
+  write(*,*) 'debut de la boucle'
   ! main loop
   do while (t < tEnd .and. nStep < nStepmax) ! boucle sur le temps et le nb de pas
      ! output
@@ -62,6 +66,7 @@ program euler2d
 
      ! perform one step integration
      call godunov_unsplit(dt)
+     write(*,*) 'iteration ', nStep, 'reussie'
 
      nStep = nStep+1
 

@@ -121,9 +121,12 @@ module HydroParameters
       call partition (nbcores,nx,ny)
       
       size_x_max = size(sizes_x)
+      !write(*,*) 'size_x_max vaut ', size_x_max
       size_y_max = size(sizes_y)
-      coord_x = modulo(myRank,size_x_max)
-      coord_y = (myRank-coord_x)/size_x_max
+      !write(*,*) 'size_y_max vaut ', size_y_max
+      coord_y = modulo(myRank,size_x_max)
+      coord_x = (myRank-coord_x)/size_x_max
+      !write(*,*) 'I am proc', myRank, 'and coord_x = ',coord_x, 'and coord_y = ', coord_y
       
       isize = sizes_x(coord_x+1) + 2*ghostwidth
       jsize = sizes_y(coord_y+1) + 2*ghostwidth
