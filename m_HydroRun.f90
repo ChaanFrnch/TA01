@@ -11,7 +11,7 @@ module HydroRun
   use mpi
 
   ! defines data arrays
-  real(fp_kind), dimension(:,:,:), allocatable :: u,u2 !< conservative variables
+  real(fp_kind), dimension(:,:,:), allocatable :: u,u2,u_tot,u2_tot !< conservative variables
   real(fp_kind), dimension(:,:,:), allocatable :: q    !< primitive variables (implementation version 1 only)
 
   real(fp_kind), dimension(:,:,:), allocatable :: qm_x, qm_y !< input to Riemann solvers (implementation version 1 only)
@@ -22,13 +22,19 @@ module HydroRun
 contains
 
   ! !!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine initHydroRun()
+  subroutine initHydroRun(myRank)
 
     implicit none
 
-    ! memory allocation
+    integer, intent(in) :: myRank
+
+    ! memory allocation)
     allocate( u (isize, jsize, nbVar) )
     allocate( u2(isize, jsize, nbVar) )
+    if(myRank==0) then
+        allocate( u_tot (isize, jsize, nbVar) )
+        allocate( u2_tot(isize, jsize, nbVar) )
+    end if
 
     if (implementationVersion .eq. 1) then
        allocate( q   (isize, jsize, nbVar) )
@@ -478,7 +484,7 @@ contains
 
     do j=1,jsize
        do i=1,isize
-          tmp = 1.0*(i-ghostWidth-1)/nx + 1.0*(j-ghostWidth-1)/ny
+          tmp = 1.0*(i+decy-ghostWidth-1)/nx + 1.0*(j+decx-ghostWidth-1)/ny
           if (tmp .gt. 0.5) then 
              data(i,j,ID)=1.0+tmp
              data(i,j,IP)=1.0/(gamma0-1.0)
@@ -584,9 +590,10 @@ contains
     real(fp_kind) :: sign
 
     call updateS(data)
-    write(*,*) 'update des S reussie'
+!    write(*,*) 'update des S reussie'
+
     call comm
-    write(*,*) 'comm reussie'
+    !write(*,*) 'comm reussie' , isize, jsize
 
     ! boundary xmin
     if(coord_x==0) then
@@ -607,20 +614,20 @@ contains
           end do
        end do
     else
-       do iVar=1,nbVar
 
-          do i=1,ghostWidth
-             do j=1+ghostWidth,jsize-ghostWidth
-                data(i,j,iVar)=leftR(i,j-ghostWidth,iVar)
-             end do
+      do iVar=1,nbVar
+        do i=1,ghostWidth
+          do j=1+ghostWidth,jsize-ghostWidth
+             data(i,j,iVar)=topR(i,j-ghostWidth,iVar)
           end do
-       end do
+        end do
+      end do
     end if
 
     ! boundary xmax
     if(coord_x==size_x_max-1) then
     do iVar=1,nbVar
-       do i=isize+ghostWidth+1,isize+2*ghostWidth
+       do i=1+isize-ghostWidth,isize
           sign=1.0
           if(boundary_type_xmax==1)then
              i0=2*nx+2*ghostWidth+1-i
@@ -630,16 +637,17 @@ contains
           else ! periodic
              i0=i-nx
           end if
-          do j=ghostWidth+1,jsize-ghostWidth
+          do j=1+ghostWidth,jsize-ghostWidth
              data(i,j,iVar)=data(i0,j,iVar)*sign
           end do
        end do
     end do
+    
     else
        do iVar=1,nbVar
-          do i=1+isize+ghostWidth,isize+2*ghostWidth
-             do j=1+ghostWidth,jsize-ghostWidth
-                data(i,j,iVar)=rightR(i-nx-ghostWidth,j-ghostWidth,iVar)
+          do i=1+isize-ghostWidth,isize
+             do j=ghostWidth+1,jsize-ghostWidth
+                data(i,j,iVar)=bottomR(i-(isize+ghostWidth),j-ghostWidth,iVar)
              end do
           end do
        end do
@@ -663,43 +671,39 @@ contains
           end do
        end do
     end do
+
     else
        do iVar=1,nbVar
           do j=1,ghostWidth
              do i=1+ghostwidth,isize-ghostWidth
-                data(i,j,iVar)=topR(i-ghostWidth,j,iVar)
+                data(i,j,iVar)=leftR(i-ghostWidth,j,iVar)
              end do
           end do
        end do
     end if
 
     ! boundary ymax
-    if(coord_y==size_y_max-1) then
-    do iVar=1,nbVar
-       do j=jsize+ghostWidth+1,jsize+2*ghostWidth
-          sign=1.0
-          if(boundary_type_ymax==1)then
-             j0=2*ny+2*ghostWidth+1-j
-             if(iVar==IV)sign=-1.0
-          else if(boundary_type_ymax==2)then
-             j0=ny+ghostWidth
-          else ! periodic
-             j0=j-ny
-          end if
-          do i=ghostWidth+1,isize-ghostWidth
-             data(i,j,iVar)=data(i,j0,iVar)*sign
-          end do
-       end do
+    
+  do iVar=1,nbVar
+    do j=jsize-ghostWidth+1,jsize
+     sign=1.0
+     if(boundary_type_ymax==1)then
+        j0=2*ny+2*ghostWidth+1-j
+     if(iVar==IV)sign=-1.0
+     else if(boundary_type_ymax==2)then
+        j0=ny+ghostWidth
+      else ! periodic
+        j0=j-ny
+      end if
+      do i=ghostWidth+1,isize-ghostWidth
+        if(coord_y==size_y_max-1) then
+          data(i,j,iVar)=data(i,j0,iVar)*sign
+        else
+          data(i,j,iVar)=rightR(i-ghostWidth,j-ny-ghostwidth,iVar)
+        end if
+      end do
     end do
-    else
-       do iVar=1,nbVar
-          do j=1+jsize+ghostwidth,jsize+2*ghostWidth
-             do i=1+ghostwidth,isize-ghostWidth
-                data(i,j,iVar)=bottomR(i-ghostWidth,j-ny-ghostwidth,iVar)
-             end do
-          end do
-       end do
-    end if
+  end do
 
   end subroutine make_boundaries
 

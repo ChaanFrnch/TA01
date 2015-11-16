@@ -30,31 +30,38 @@ program euler2d
   !call printHydroParameters()
 
   ! init domain
-  call initHydroRun()
+  call initHydroRun(myRank)
   call compute_dt( dt, modulo(nStep,2) ) ! pas adaptatif, calcule a chaque fois pour stabilite
-  write(*,*) 'Initial value for dt ',dt
+!  write(*,*) 'Initial value for dt ',dt
 
   ! init boundaries
   call initS
-  write(*,*) 'initialisation des S reussie'
+!  write(*,*) 'initialisation des S reussie'
   call make_boundaries(u)
-  write(*,*) 'premier make_boundaries reussi'
+if (myRank == 0 )then
+  !write(*,*) 'premier make_boundaries reussi'
+end if
+
+  call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
   ! start computation
-  write(*,*) 'Start computation....'
+  !write(*,*) 'Start computation....'
   call timerStart(total_timer)
 
-  write(*,*) 'debut de la boucle'
+  !write(*,*) 'debut de la boucle'
   ! main loop
   do while (t < tEnd .and. nStep < nStepmax) ! boucle sur le temps et le nb de pas
      ! output
      if ( modulo(nStep,nOutput) == 0) then ! impression tous les nOutput
+        if (myRank == 0 ) then
         write(*,*) 'Output results at step ',nStep, 'dt ',dt
         !call timerStart(io_timer)
         !call saveVTK(u,nStep)
         !call timerStop(io_timer)
+        end if
      end if
 
+     call MPI_BARRIER(MPI_COMM_WORLD,ierr)
      ! compute dt
      call compute_dt( dt, modulo(nStep,2) )
      ! determine dt_min
@@ -64,9 +71,18 @@ program euler2d
      dt = dt_min
      !write(*,*) 'I am proc ', myRank, 'and dt = ', dt
 
+     call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
      ! perform one step integration
+if (myRank == 0) then
+write(*,*) 'iteration' , nStep , 'en cours'
+end if
+
      call godunov_unsplit(dt)
-     write(*,*) 'iteration ', nStep, 'reussie'
+
+if (myRank == 0) then
+write(*,*) 'iteration ', nStep, 'reussie'
+end if
 
      nStep = nStep+1
 

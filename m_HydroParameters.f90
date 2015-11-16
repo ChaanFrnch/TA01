@@ -166,7 +166,7 @@ module HydroParameters
          write(*,*) 'Check your namelist file, section OTHER'
          stop
       else
-         write(*,*) 'Using implementation version', implementationVersion
+         !write(*,*) 'Using implementation version', implementationVersion
       end if
 
     end subroutine initHydroParameters
