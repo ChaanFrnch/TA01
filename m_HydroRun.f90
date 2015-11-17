@@ -590,7 +590,7 @@ contains
     real(fp_kind) :: sign
 
     call updateS(data)
-!    write(*,*) 'update des S reussie'
+    !write(*,*) 'update des S reussie'
 
     call comm
     !write(*,*) 'comm reussie' , isize, jsize
@@ -614,7 +614,6 @@ contains
           end do
        end do
     else
-
       do iVar=1,nbVar
         do i=1,ghostWidth
           do j=1+ghostWidth,jsize-ghostWidth
@@ -642,7 +641,6 @@ contains
           end do
        end do
     end do
-    
     else
        do iVar=1,nbVar
           do i=1+isize-ghostWidth,isize
@@ -671,7 +669,6 @@ contains
           end do
        end do
     end do
-
     else
        do iVar=1,nbVar
           do j=1,ghostWidth

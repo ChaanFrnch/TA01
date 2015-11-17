@@ -32,14 +32,18 @@ program euler2d
   ! init domain
   call initHydroRun(myRank)
   call compute_dt( dt, modulo(nStep,2) ) ! pas adaptatif, calcule a chaque fois pour stabilite
-!  write(*,*) 'Initial value for dt ',dt
+  call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
+  !write(*,*) 'I am proc ', myRank, 'and dt_min = ', dt_min
+  call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
+  dt=dt_min
+!  write(*,*) 'Initial value for dt ',dt,myRank
 
   ! init boundaries
   call initS
 !  write(*,*) 'initialisation des S reussie'
   call make_boundaries(u)
 if (myRank == 0 )then
-  !write(*,*) 'premier make_boundaries reussi'
+  write(*,*) 'premier make_boundaries reussi'
 end if
 
   call MPI_BARRIER(MPI_COMM_WORLD,ierr)

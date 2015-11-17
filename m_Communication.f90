@@ -59,50 +59,53 @@ contains
 
 !write(*,*) size_x_max , " " , size_y_max
 
-  nb_loop = size_x_max
+  nb_loop = size_x_max-1
 
 !top send
   do index_loop = 0,nb_loop
-  index_x = size_x_max - index_loop
+  index_x = size_x_max - 1 - index_loop
    if (coord_x < size_x_max-1 .AND. coord_x == index_x) then
-    call MPI_RECV(bottomR, size_top, MPI_REAL, coord_y+size_x_max*(index_x+1), 1, MPI_COMM_WORLD, mpistat, ierr)
+    call MPI_RECV(bottomR, size_top, MPI_REAL, (index_x+1)*size_y_max+coord_y, 1, MPI_COMM_WORLD, mpistat, ierr)
    end if 
    if (coord_x > 0 .AND. coord_x == index_x ) then
-    call MPI_SEND(topS, size_top, MPI_REAL, coord_y + size_x_max*(index_x-1), 1, MPI_COMM_WORLD, mpistat, ierr) 
+    !write(*,*) index_x*size_y_max+coord_y ,'sending top to', (index_x-1)*size_y_max+coord_y
+    call MPI_SEND(topS, size_top, MPI_REAL, coord_y + size_y_max*(index_x-1), 1, MPI_COMM_WORLD, mpistat, ierr) 
    end if
   end do
 
 !bot send
   do index_loop = 0,nb_loop
    if (coord_x > 0 .AND. coord_x == index_loop) then
-    call MPI_RECV(topR, size_top, MPI_REAL, coord_y+size_x_max*(index_loop-1), 1, MPI_COMM_WORLD, mpistat, ierr)
+    call MPI_RECV(topR, size_top, MPI_REAL, coord_y+size_y_max*(index_loop-1), 1, MPI_COMM_WORLD, mpistat, ierr)
    end if 
    if (coord_x < size_x_max-1 .AND. coord_x == index_loop ) then
-    call MPI_SEND(bottomS, size_top, MPI_REAL, coord_y + size_x_max*(index_loop+1), 1, MPI_COMM_WORLD, mpistat, ierr) 
+    !write(*,*) index_loop*size_y_max+coord_y ,'sending bottom to', (index_loop+1)*size_y_max+coord_y
+    call MPI_SEND(bottomS, size_top, MPI_REAL, coord_y + size_y_max*(index_loop+1), 1, MPI_COMM_WORLD, mpistat, ierr) 
    end if
   end do
 
-  nb_loop = size_y_max 
-
+  nb_loop = size_y_max-1 
 
   !left send
   do index_loop = 0,nb_loop
-    index_y = size_y_max - index_loop
+    index_y = size_y_max - 1 - index_loop
    if (coord_y < size_y_max-1 .AND. coord_y == index_y) then
-      call MPI_RECV(rightR, size_right, MPI_REAL, size_x_max*coord_x + (index_y +1), 1, MPI_COMM_WORLD, mpistat, ierr)
+      call MPI_RECV(rightR, size_right, MPI_REAL, size_y_max*coord_x + (index_y +1), 1, MPI_COMM_WORLD, mpistat, ierr)
     end if 
     if (coord_y > 0 .AND. coord_y == index_y ) then
-      call MPI_SEND(leftS, size_right, MPI_REAL, (index_y-1) + size_x_max*coord_x, 1, MPI_COMM_WORLD, mpistat, ierr) 
+!write(*,*) (index_y)+size_y_max*coord_x ,'sending left to', (index_y-1)+size_y_max*coord_x
+      call MPI_SEND(leftS, size_right, MPI_REAL, (index_y-1) + size_y_max*coord_x, 1, MPI_COMM_WORLD, mpistat, ierr) 
     end if
   end do
 
 !right send
   do index_loop = 0,nb_loop
     if (coord_y > 0 .AND. coord_y == index_loop) then
-     call MPI_RECV(leftR, size_right, MPI_REAL, (index_loop-1)+size_x_max*coord_x, 1, MPI_COMM_WORLD, mpistat, ierr)
+     call MPI_RECV(leftR, size_right, MPI_REAL, (index_loop-1)+size_y_max*coord_x, 1, MPI_COMM_WORLD, mpistat, ierr)
     end if 
     if (coord_y < size_y_max-1 .AND. coord_y == index_loop ) then
-     call MPI_SEND(rightS, size_right, MPI_REAL, (index_loop+1)+size_x_max*coord_x, 1, MPI_COMM_WORLD, mpistat, ierr) 
+!write(*,*) (index_loop)+size_y_max*coord_x ,'sending right to', (index_loop+1)+size_y_max*coord_x
+     call MPI_SEND(rightS, size_right, MPI_REAL, (index_loop+1)+size_y_max*coord_x, 1, MPI_COMM_WORLD, mpistat, ierr) 
     end if
   end do
 

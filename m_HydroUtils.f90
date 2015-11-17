@@ -57,6 +57,9 @@ module HydroUtils
       
       eken = 0.5 * (qLoc(IU) * qloc(IU) + qLoc(IV) * qLoc(IV))
       e = uLoc(IP) / qLoc(ID) - eken
+      if (e<0) then
+      write(*,*) 'e : ', e
+      end if
       if (e < 0) then
          write(*,*) 'FATAL ERROR : hydro eint < 0  : e ', uLoc(IP), 'eken ',eken,' d ',uLoc(ID),' u ',uLoc(IU),' v ',uLoc(IV)
          stop
