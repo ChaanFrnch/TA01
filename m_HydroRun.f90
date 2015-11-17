@@ -31,10 +31,10 @@ contains
     ! memory allocation)
     allocate( u (isize, jsize, nbVar) )
     allocate( u2(isize, jsize, nbVar) )
-    if(myRank==0) then
-        allocate( u_tot (isize, jsize, nbVar) )
-        allocate( u2_tot(isize, jsize, nbVar) )
-    end if
+    !if(myRank==0) then
+        allocate( u_tot (isize_tot, jsize_tot, nbVar) )
+        allocate( u2_tot(isize_tot, jsize_tot, nbVar) )
+    !end if
 
     if (implementationVersion .eq. 1) then
        allocate( q   (isize, jsize, nbVar) )
@@ -484,7 +484,7 @@ contains
 
     do j=1,jsize
        do i=1,isize
-          tmp = 1.0*(i+decy-ghostWidth-1)/nx + 1.0*(j+decx-ghostWidth-1)/ny
+          tmp = 1.0*(i+decx-ghostWidth-1)/nx + 1.0*(j+decy-ghostWidth-1)/ny
           if (tmp .gt. 0.5) then 
              data(i,j,ID)=1.0+tmp
              data(i,j,IP)=1.0/(gamma0-1.0)
@@ -543,7 +543,7 @@ contains
     end if
 
     ! write mesh extent
-    write(charBuf,fmt='(6(I7))',iostat=error) 1,nx+1,1,ny+1,1,2
+    write(charBuf,fmt='(6(I7))',iostat=error) 1,isize-2*ghostWidth+1,1,jsize-2*ghostWidth+1,1,2
     write(10,'(a)') repeat(' ',2)//'<ImageData WholeExtent="'//trim(charBuf)//'"'
     write(10,'(a)') ' Origin="0 0 0" Spacing="1 1 1">'//endl
     write(10,'(a)') repeat(' ',2)//'<Piece Extent="'//trim(charBuf)//'">'//endl
@@ -703,5 +703,55 @@ contains
   end do
 
   end subroutine make_boundaries
+
+  subroutine reconstitute(myRank, nbTask)
+
+    implicit none
+    integer, intent(in) :: myRank, nbTask
+    integer :: ierr, i, j, iVar, datatosend
+    integer, dimension(MPI_STATUS_SIZE) :: status
+
+    !datatosend = 2.
+
+    if(myRank == 0) then
+      !write(*,*) 'I am proc ', myRank, 'and I send u_tot to proc 1'
+      !call MPI_SEND(datatosend, 1, MPI_REAL, 1, 1, MPI_COMM_WORLD, ierr)
+      call MPI_SEND(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, ierr)
+      !write(*,*) 'I am proc ', myRank, 'and I have sent u_tot to proc 1'
+      !call MPI_SEND(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, ierr)
+    end if
+ 
+    !write(*,*) 'un truc'
+
+    if(myRank > 0) then
+      !write(*,*) 'I am proc ', myRank, 'and I(m receiving u_tot from proc ', myRank-1
+      !call MPI_RECV(datatosend, 1, MPI_REAL, myRank-1, 1, MPI_COMM_WORLD, status, ierr)
+      call MPI_RECV(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, myRank-1, 1, MPI_COMM_WORLD, status, ierr)
+      !write(*,*) 'I am proc ', myRank, 'and I receive u_tot from proc ', myRank-1
+      !call MPI_RECV(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, myRank-1, 1, MPI_COMM_WORLD, status, ierr)
+      do iVar = 1,nbVar
+        do i = 1+ghostWidth,isize-ghostWidth
+          do j = 1+ghostWidth,jsize-ghostWidth
+            u_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
+            !u2_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
+          end do
+        end do
+      end do
+      !call MPI_SEND(datatosend, 1, MPI_REAL, modulo(myRank+1,nbTask), 1, MPI_COMM_WORLD, ierr)
+      call MPI_SEND(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, modulo(myRank+1,nbTask), 1, MPI_COMM_WORLD, ierr) 
+      !write(*,*) 'I am proc ', myRank, 'and I send u_tot to proc ', modulo(myRank+1, nbTask)
+      !call MPI_SEND(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, modulo(myRank+1,nbTask), 1, MPI_COMM_WORLD, ierr)
+    end if
+
+    !write(*,*) 'un autre truc'
+
+    if(myRank == 0) then
+      !call MPI_RECV(datatosend, 1, MPI_REAL, nbTask-1, 1, MPI_COMM_WORLD, status, ierr)
+      call MPI_RECV(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, nbTask-1, 1, MPI_COMM_WORLD, status, ierr)
+      !write(*,*) 'I am proc ', myRank, 'and I receive u_tot from proc ', nbTask-1
+      !call MPI_RECV(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, status, ierr)
+    end if
+
+    end subroutine
 
 end module HydroRun
