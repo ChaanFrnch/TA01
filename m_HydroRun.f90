@@ -22,11 +22,11 @@ module HydroRun
 contains
 
   ! !!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine initHydroRun(myRank)
+  subroutine initHydroRun
 
     implicit none
 
-    integer, intent(in) :: myRank
+    !integer, intent(in) :: myRank
 
     ! memory allocation)
     allocate( u (isize, jsize, nbVar) )
@@ -507,7 +507,7 @@ contains
   subroutine saveVTK(data,iStep)
     implicit none
     ! dummy variables
-    real   (fp_kind), dimension(isize, jsize, nbVar), intent(inout) :: data
+    real   (fp_kind), dimension(isize_tot, jsize_tot, nbVar), intent(inout) :: data
     integer(int_kind) :: iStep
     !integer, intent(in) :: myRank
 
@@ -543,7 +543,7 @@ contains
     end if
 
     ! write mesh extent
-    write(charBuf,fmt='(6(I7))',iostat=error) 1,isize-2*ghostWidth+1,1,jsize-2*ghostWidth+1,1,2
+    write(charBuf,fmt='(6(I7))',iostat=error) 1,isize_tot+1,1,jsize_tot+1,1,2
     write(10,'(a)') repeat(' ',2)//'<ImageData WholeExtent="'//trim(charBuf)//'"'
     write(10,'(a)') ' Origin="0 0 0" Spacing="1 1 1">'//endl
     write(10,'(a)') repeat(' ',2)//'<Piece Extent="'//trim(charBuf)//'">'//endl
@@ -557,8 +557,8 @@ contains
        write(10,'(a)') repeat(' ',4)//'<DataArray type="'//trim(floatType)// &
             & '" Name="'//varNames(iVar)//'" format="ascii" >'//endl
 
-       do j=ghostWidth+1,jsize-ghostWidth
-          write(10,*) data(ghostWidth+1:isize-ghostWidth,j,iVar)
+       do j=ghostWidth+1,jsize_tot-ghostWidth
+          write(10,*) data(ghostWidth+1:isize_tot-ghostWidth,j,iVar)
        end do
 
        write(10,'(a)') repeat(' ',4)//'</DataArray>'//endl
@@ -708,7 +708,7 @@ contains
 
     implicit none
     integer, intent(in) :: myRank, nbTask
-    integer :: ierr, i, j, iVar, datatosend
+    integer :: ierr, i, j, iVar
     integer, dimension(MPI_STATUS_SIZE) :: status
 
     !datatosend = 2.

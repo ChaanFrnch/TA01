@@ -18,7 +18,7 @@ program euler2d
   real   (fp_kind)  :: dt_min=0
   !integer :: nbpowers, nbcores
   integer :: nbTask, myRank, ierr
-  integer,dimension(MPI_STATUS_SIZE)   :: mpistat
+  !integer,dimension(MPI_STATUS_SIZE)   :: mpistat
   !integer,dimension(:),allocatable :: sizes_x, sizes_y
 
   call MPI_Init(ierr)
@@ -30,7 +30,7 @@ program euler2d
   !call printHydroParameters()
 
   ! init domain
-  call initHydroRun(myRank)
+  call initHydroRun
   call compute_dt( dt, modulo(nStep,2) ) ! pas adaptatif, calcule a chaque fois pour stabilite
   call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
   !write(*,*) 'I am proc ', myRank, 'and dt_min = ', dt_min
@@ -60,10 +60,10 @@ end if
   call reconstitute(myRank, nbTask)
   write(*,*) 'fin de reconstitute'
      if ( modulo(nStep,nOutput) == 0) then ! impression tous les nOutput
-        if (myRank == 2 ) then
+        if (myRank == 0 ) then
         write(*,*) 'Output results at step ',nStep, 'dt ',dt
         call timerStart(io_timer)
-        call saveVTK(u,nStep)
+        call saveVTK(u_tot,nStep)
         call timerStop(io_timer)
         end if
      end if
