@@ -40,11 +40,11 @@ program euler2d
 
   ! init boundaries
   call initS
-!  write(*,*) 'initialisation des S reussie'
-  call make_boundaries(u)
-if (myRank == 0 )then
-  write(*,*) 'premier make_boundaries reussi'
-end if
+!  call make_boundaries(u)
+
+ ! nx = isize-2*ghostWidth
+ ! ny = jsize-2*ghostWidth
+
 
   call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
@@ -56,14 +56,8 @@ end if
   ! main loop
   do while (t < tEnd .and. nStep < nStepmax) ! boucle sur le temps et le nb de pas
      ! output
-if(myRank == 0) then
-  write(*,*) 'debut de reconstitute'
-end if
-  call reconstitute(myRank, nbTask)
-if(myRank == 0) then
-  write(*,*) 'fin de reconstitute'
-end if
      if ( modulo(nStep,nOutput) == 0) then ! impression tous les nOutput
+        call reconstitute(myRank, nbTask)
         if (myRank == 0) then
         write(*,*) 'Output results at step ',nStep, 'dt ',dt
         call timerStart(io_timer)
@@ -77,7 +71,7 @@ end if
      call compute_dt( dt, modulo(nStep,2) )
      ! determine dt_min
      call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
-     !write(*,*) 'I am proc ', myRank, 'and dt_min = ', dt_min
+     !write(*,*) 'I am proc ', myRank, 'and dt = ', dt
      call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
      dt = dt_min
      !write(*,*) 'I am proc ', myRank, 'and dt = ', dt
@@ -85,18 +79,9 @@ end if
      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
      ! perform one step integration
-if (myRank == 0) then
-write(*,*) 'iteration' , nStep , 'en cours'
-end if
 
      call godunov_unsplit(dt)
-
-if (myRank == 0) then
-write(*,*) 'iteration ', nStep, 'reussie'
-end if
-
      nStep = nStep+1
-
   end do
 
   ! end of computation
