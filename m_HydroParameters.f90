@@ -116,16 +116,16 @@ module HydroParameters
 
       isize_tot = imax - imin + 1
       jsize_tot = jmax - jmin + 1
+      !write(*,*) 'isize_tot = ', isize_tot, 'jsize_tot = ', jsize_tot 
 
       nbcores = nbTask
       call partition (nbcores,nx,ny)
       
       size_x_max = size(sizes_x)
       size_y_max = size(sizes_y)
-      !write(*,*) 'size_x_max vaut ', size_x_max
-      !write(*,*) 'size_y_max vaut ', size_y_max
-      coord_y = modulo(myRank,size_y_max)
-      coord_x = (myRank-coord_y)/size_y_max
+
+      coord_x = modulo(myRank,size_x_max)
+      coord_y = (myRank-coord_x)/size_x_max
       !write(*,*) 'I am proc', myRank, 'and coord_x = ',coord_x, 'and coord_y = ', coord_y
       
       isize = sizes_x(coord_x+1) + 2*ghostwidth

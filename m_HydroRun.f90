@@ -508,6 +508,7 @@ contains
     implicit none
     ! dummy variables
     real   (fp_kind), dimension(isize_tot, jsize_tot, nbVar), intent(inout) :: data
+    !real   (fp_kind), dimension(isize, jsize, nbVar), intent(inout) :: data
     integer(int_kind) :: iStep
     !integer, intent(in) :: myRank
 
@@ -543,7 +544,8 @@ contains
     end if
 
     ! write mesh extent
-    write(charBuf,fmt='(6(I7))',iostat=error) 1,isize_tot+1,1,jsize_tot+1,1,2
+    write(charBuf,fmt='(6(I7))',iostat=error) 1,nx+1,1,ny+1,1,2
+    !write(charBuf,fmt='(6(I7))',iostat=error) 1,isize-2*ghostWidth+1,1,jsize-2*ghostWidth+1,1,2
     write(10,'(a)') repeat(' ',2)//'<ImageData WholeExtent="'//trim(charBuf)//'"'
     write(10,'(a)') ' Origin="0 0 0" Spacing="1 1 1">'//endl
     write(10,'(a)') repeat(' ',2)//'<Piece Extent="'//trim(charBuf)//'">'//endl
@@ -559,6 +561,8 @@ contains
 
        do j=ghostWidth+1,jsize_tot-ghostWidth
           write(10,*) data(ghostWidth+1:isize_tot-ghostWidth,j,iVar)
+       !do j=ghostWidth+1,jsize-ghostWidth
+          !write(10,*) data(ghostWidth+1:isize-ghostWidth,j,iVar)
        end do
 
        write(10,'(a)') repeat(' ',4)//'</DataArray>'//endl
@@ -748,6 +752,14 @@ contains
     if(myRank == 0) then
       !call MPI_RECV(datatosend, 1, MPI_REAL, nbTask-1, 1, MPI_COMM_WORLD, status, ierr)
       call MPI_RECV(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, nbTask-1, 1, MPI_COMM_WORLD, status, ierr)
+      do iVar = 1,nbVar
+        do i = 1+ghostWidth,isize-ghostWidth
+          do j = 1+ghostWidth,jsize-ghostWidth
+            u_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
+            !u2_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
+          end do
+        end do
+      end do
       !write(*,*) 'I am proc ', myRank, 'and I receive u_tot from proc ', nbTask-1
       !call MPI_RECV(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, status, ierr)
     end if

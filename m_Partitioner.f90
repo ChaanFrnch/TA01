@@ -46,9 +46,6 @@ contains
       mx = 2**powx
       my = 2**powy
 
-      !write(*,*) 'mx is equal to', mx
-      !write(*,*) 'my is equal to', my
-
       waste_x = mod(nx,mx)
       size_x = (nx-waste_x)/mx
       waste_y = mod(ny,my)

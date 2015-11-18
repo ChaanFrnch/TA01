@@ -56,11 +56,15 @@ end if
   ! main loop
   do while (t < tEnd .and. nStep < nStepmax) ! boucle sur le temps et le nb de pas
      ! output
+if(myRank == 0) then
   write(*,*) 'debut de reconstitute'
+end if
   call reconstitute(myRank, nbTask)
+if(myRank == 0) then
   write(*,*) 'fin de reconstitute'
+end if
      if ( modulo(nStep,nOutput) == 0) then ! impression tous les nOutput
-        if (myRank == 0 ) then
+        if (myRank == 0) then
         write(*,*) 'Output results at step ',nStep, 'dt ',dt
         call timerStart(io_timer)
         call saveVTK(u_tot,nStep)
