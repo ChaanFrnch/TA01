@@ -1,34 +1,49 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!< Defines all variables needed to perform parallel communications
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module Communication
 
    use HydroParameters
    use Monitoring
    use mpi
 
+   ! communication parameters
    real(fp_kind), dimension(:,:,:), allocatable :: topS, bottomS, leftS, rightS, topR, bottomR, leftR, rightR
    integer :: size_top,size_right
 
 contains
 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !! initialization of the communication arrays
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine initS
 
+   ! top array (to send and to receive)
    allocate (topS(isize-2*ghostWidth,ghostWidth,nbVar))
    allocate (topR(isize-2*ghostWidth,ghostWidth,nbVar))
 
+   ! bottom array (to send and to receive)
    allocate (bottomS(isize-2*ghostWidth,ghostWidth,nbVar))
    allocate (bottomR(isize-2*ghostWidth,ghostWidth,nbVar))
 
+   ! left array (to send and to receive)
    allocate (leftS(ghostWidth,jsize-2*ghostWidth,nbVar))
    allocate (leftR(ghostWidth,jsize-2*ghostWidth,nbVar)) 
  
+   ! right array (to send and to receive)
    allocate (rightS(ghostWidth,jsize-2*ghostWidth,nbVar))
    allocate (rightR(ghostWidth,jsize-2*ghostWidth,nbVar))
 
    end subroutine initS
 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !! write the boundaries values in the communication arrays
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine updateS(data)
 
    implicit none 
 
+   ! local variables
    integer :: i, j, iVar
    real(fp_kind), dimension(isize, jsize, nbVar), intent(in) :: data
 
@@ -49,18 +64,23 @@ contains
        end do
    end do
 
+  ! sizes of the communication arrays
   size_top   = (isize-2*ghostwidth)*ghostWidth*nbVar
   size_right = (jsize-2*ghostwidth)*ghostWidth*nbVar
 
   end subroutine updateS
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! sending and receiving communication arrays
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine comm
 
+  ! local variables
   integer :: nb_loop, index_loop,index_x,index_y
 
   nb_loop = size_y_max-1
 
-!top send
+  !top send
   do index_loop = 0,nb_loop
    index_y = index_loop
    index_x = coord_x
@@ -72,7 +92,7 @@ contains
    end if
   end do
 
-!bottom send
+  !bottom send
   do index_loop = 0,nb_loop
   index_y = nb_loop - index_loop
   index_x = coord_x
@@ -86,7 +106,7 @@ contains
 
   nb_loop = size_x_max-1 
 
-!right send
+  !right send
   do index_loop = 0,nb_loop
    index_x = index_loop
    index_y = coord_y
@@ -98,7 +118,7 @@ contains
    end if
   end do
 
-!bottom send
+  !bottom send
   do index_loop = 0,nb_loop
   index_x = nb_loop - index_loop
   index_y = coord_y

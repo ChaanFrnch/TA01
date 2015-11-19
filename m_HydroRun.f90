@@ -11,12 +11,10 @@ module HydroRun
   use mpi
 
   ! defines data arrays
-  real(fp_kind), dimension(:,:,:), allocatable :: u,u2,u_tot,u2_tot !< conservative variables
+  real(fp_kind), dimension(:,:,:), allocatable :: u,u2,u_tot !< conservative variables
   real(fp_kind), dimension(:,:,:), allocatable :: q    !< primitive variables (implementation version 1 only)
-
   real(fp_kind), dimension(:,:,:), allocatable :: qm_x, qm_y !< input to Riemann solvers (implementation version 1 only)
   real(fp_kind), dimension(:,:,:), allocatable :: qp_x, qp_y !< input to Riemann solvers (implementation version 1 only)
-
   integer(int_kind) :: nStep=0
 
 contains
@@ -31,10 +29,7 @@ contains
     ! memory allocation)
     allocate( u (isize, jsize, nbVar) )
     allocate( u2(isize, jsize, nbVar) )
-    !if(myRank==0) then
-        allocate( u_tot (isize_tot, jsize_tot, nbVar) )
-        allocate( u2_tot(isize_tot, jsize_tot, nbVar) )
-    !end if
+    allocate( u_tot (isize_tot, jsize_tot, nbVar) )
 
     if (implementationVersion .eq. 1) then
        allocate( q   (isize, jsize, nbVar) )
@@ -62,6 +57,7 @@ contains
 
     ! memory free
     deallocate(u,u2)
+    deallocate(u_tot)
 
     if (implementationVersion .eq. 1) then
        deallocate(q,qm_x,qm_y,qp_x,qp_y) 
@@ -81,8 +77,8 @@ contains
 
     ! local variables
     real(fp_kind) :: invDt=0.0
-    real(fp_kind) :: vx,vy
-    integer :: i,j
+    real(fp_kind) :: vx,vy,dt_min
+    integer :: i,j, ierr
     real(fp_kind), dimension(nbVar) :: qLoc
     real(fp_kind)                   :: c
 
@@ -115,6 +111,13 @@ contains
     end if
 
     dt = cfl / invDt
+
+    ! to determine the most constraining dt and return it to each processor
+    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+    call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
+    call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
+    dt = dt_min
+    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
   end subroutine compute_dt
 
@@ -594,8 +597,11 @@ contains
     integer ::i,j,i0,j0,iVar
     real(fp_kind) :: sign
 
+    ! write inner border conditions in communication arrays
     call updateS(data)
+    ! send and receive communication arrays
     call comm
+
     ! boundary xmin
     if(coord_x==0) then
      do iVar=1,nbVar
@@ -614,7 +620,7 @@ contains
           end do
        end do
     end do
-    else
+    else ! inner cell
       do iVar=1,nbVar
         do i=1,ghostWidth
           do j=1+ghostWidth,jsize-ghostWidth
@@ -642,7 +648,7 @@ contains
           end do
        end do
     end do
-    else
+    else ! inner cell
        do iVar=1,nbVar
           do i=1+isize-ghostWidth,isize
              do j=ghostWidth+1,jsize-ghostWidth
@@ -670,7 +676,7 @@ contains
           end do
        end do
     end do
-    else
+    else ! inner cell
        do iVar=1,nbVar
           do j=1,ghostWidth
              do i=1+ghostwidth,isize-ghostWidth
@@ -698,7 +704,7 @@ contains
           end do
        end do
     end do
-    else
+    else ! inner cell
      do iVar=1,nbVar
       do j = jsize-ghostWidth+1,jsize
         do i = ghostWidth+1,isize-ghostWidth
@@ -710,19 +716,25 @@ contains
 
   end subroutine make_boundaries
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! create the global array for printing
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine reconstitute(myRank, nbTask)
 
     implicit none
+    
+    ! dummy variables
     integer, intent(in) :: myRank, nbTask
+    ! local vairables
     integer :: ierr, i, j, iVar
     integer, dimension(MPI_STATUS_SIZE) :: status
 
-
-
+    ! processor 0 sends the global_array
     if(myRank == 0) then
       call MPI_SEND(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, ierr)
     end if
  
+    ! each processor writes its data in it
     if(myRank > 0) then
       call MPI_RECV(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, myRank-1, 1, MPI_COMM_WORLD, status, ierr)
       do iVar = 1,nbVar
@@ -735,6 +747,7 @@ contains
       call MPI_SEND(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, modulo(myRank+1,nbTask), 1, MPI_COMM_WORLD, ierr) 
     end if
 
+    ! processor 0 receives the completed global array and writes in it
     if(myRank == 0) then
       call MPI_RECV(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, nbTask-1, 1, MPI_COMM_WORLD, status, ierr)
       do iVar = 1,nbVar

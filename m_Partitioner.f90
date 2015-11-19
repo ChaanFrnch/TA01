@@ -1,11 +1,18 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!< Defines all variables needed to perform parallel partitioning
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module Partitioner
 
   use mpi
 
+  ! partitioner parameters
   integer,dimension(:),allocatable :: sizes_x, sizes_y
 
 contains
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !! for 2^n processors, determine n
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine nbpow2(nbcores,nbpowers)
 
   implicit none
@@ -22,13 +29,19 @@ contains
 
     end subroutine nbpow2
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !! do the partitioning
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine partition(nbcores,nx,ny)
 
       implicit none
+
+      ! dummy variables
       integer,intent(inout) :: nbcores, nx, ny
+      ! local variables
       integer :: nbpowers, modu, powx, powy, mx, my, size_x, size_y, waste_x, waste_y, i
 
-      
+      ! determine how many cells in each direction
       call nbpow2(nbcores,nbpowers)
       modu = modulo(nbpowers,2)
 
@@ -43,6 +56,7 @@ contains
       mx = 2**powx
       my = 2**powy
 
+      ! in case there are extra cells
       waste_x = mod(nx,mx)
       size_x = (nx-waste_x)/mx
       waste_y = mod(ny,my)

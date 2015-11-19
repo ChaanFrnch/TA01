@@ -61,9 +61,9 @@ module HydroParameters
   !! other parameters
   integer(int_kind)  ::  nbVar=4  !< number of fields in simulation (density, energy, vx, vy)
   integer(int_kind)  :: implementationVersion=0 !< triggers which implementation to use (currently 2 versions)
-  integer :: coord_x, coord_y 
-  integer :: size_x_max, size_y_max
-  integer :: decx, decy
+  integer :: coord_x, coord_y         !< processor coordinates
+  integer :: size_x_max, size_y_max   !< number of processors along each axes
+  integer :: decx, decy               !< shift from global to local indices
 
   contains
 
@@ -73,14 +73,11 @@ module HydroParameters
 
       ! local variables
       integer, intent(in) :: nbTask, myRank
-      !integer, intent(in) :: coord_x, coord_y
       integer(int_kind) :: narg
       character(LEN=80) :: inputFilename
-      !integer :: size_x
       !! partitioner parameters
       integer :: nbcores
       integer :: i, sum
-      !integer,dimension(:), intent(out) :: sizes_x, sizes_y
    
       ! declare namelist
       namelist/run/tEnd,nStepmax,nOutput
@@ -109,6 +106,8 @@ module HydroParameters
       close(1)
 
       ! set other parameters
+
+      ! set global parameters
       imin = 1
       jmin = 1
       imax = nx+2*ghostWidth
@@ -117,9 +116,11 @@ module HydroParameters
       isize_tot = imax - imin + 1
       jsize_tot = jmax - jmin + 1
 
+      ! partitioning
       nbcores = nbTask
       call partition (nbcores,nx,ny)
       
+      ! set local parameters for each processor
       size_x_max = size(sizes_x)
       size_y_max = size(sizes_y)
 

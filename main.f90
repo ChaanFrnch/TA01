@@ -15,16 +15,12 @@ program euler2d
 
   real   (fp_kind)  :: t=0
   real   (fp_kind)  :: dt=0
-  real   (fp_kind)  :: dt_min=0
-  !integer :: nbpowers, nbcores
   integer :: nbTask, myRank, ierr
-  !integer,dimension(MPI_STATUS_SIZE)   :: mpistat
-  !integer,dimension(:),allocatable :: sizes_x, sizes_y
 
   call MPI_Init(ierr)
 
-  call MPI_COMM_SIZE(MPI_COMM_WORLD, nbTask, ierr)
-  call MPI_COMM_RANK(MPI_COMM_WORLD, myRank, ierr)
+  call MPI_COMM_SIZE(MPI_COMM_WORLD, nbTask, ierr) ! get number of processors
+  call MPI_COMM_RANK(MPI_COMM_WORLD, myRank, ierr) ! get the rank of each processor
 
   call initHydroParameters(nbTask, myRank)
   if (myRank == 0 ) then
@@ -33,24 +29,20 @@ program euler2d
 
   ! init domain
   call initHydroRun
-  call compute_dt( dt, modulo(nStep,2) ) ! pas adaptatif, calcule a chaque fois pour stabilite
-  call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
-  call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
-  dt=dt_min
+  call compute_dt( dt, modulo(nStep,2) ) ! most constraining dt from all processors 
 
   ! init boundaries
   call initS
-
   call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
   ! start computation
   call timerStart(total_timer)
 
   ! main loop
-  do while (t < tEnd .and. nStep < nStepmax) ! boucle sur le temps et le nb de pas
+  do while (t < tEnd .and. nStep < nStepmax) ! loop over time and maximum number of steps
      ! output
-     if ( modulo(nStep,nOutput) == 0) then ! impression tous les nOutput
-        call reconstitute(myRank, nbTask)
+     if ( modulo(nStep,nOutput) == 0) then ! print every nOutput
+        call reconstitute(myRank, nbTask)  ! assemble the total array
         if (myRank == 0) then
         write(*,*) 'Output results at step ',nStep, 'dt ',dt
         call timerStart(io_timer)
@@ -59,14 +51,8 @@ program euler2d
         end if
      end if
 
-     call MPI_BARRIER(MPI_COMM_WORLD,ierr)
-     ! compute dt
-     call compute_dt( dt, modulo(nStep,2) )
-     ! determine dt_min
-     call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
-     call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
-     dt = dt_min
-     call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+     ! compute dt_min
+     call compute_dt( dt, modulo(nStep,2) ) ! most constraining dt from all processors 
 
      ! perform one step integration
      call godunov_unsplit(dt)
