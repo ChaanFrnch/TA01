@@ -3,7 +3,6 @@ module Partitioner
   use mpi
 
   integer,dimension(:),allocatable :: sizes_x, sizes_y
-  !integer :: decx, decy
 
 contains
 
@@ -20,7 +19,6 @@ contains
         if (nbcores <= 1) exit
         nbpowers = nbpowers + 1
       end do
-      !write(*,*) 'The numbers of processors is equal to 2 to the power ', nbpowers
 
     end subroutine nbpow2
 
@@ -33,7 +31,6 @@ contains
       
       call nbpow2(nbcores,nbpowers)
       modu = modulo(nbpowers,2)
-      !write(*,*) 'modu is equal to',modu
 
       if ( modu == 1 ) then 
         powx = (nbpowers+1)/2
@@ -54,25 +51,23 @@ contains
       allocate (sizes_x(mx))
       allocate (sizes_y(my))
 
-      do 10 i=1,mx
+      do i=1,mx
         if (waste_x > 0) then
           sizes_x(i) = size_x + 1
           waste_x = waste_x-1
         else 
           sizes_x(i) = size_x
         end if
-        !write(*,*) 'The size for x is', size_x
-      10 continue
+      end do
 
-      do 20 i=1,my
+      do i=1,my
         if (waste_y > 0) then
           sizes_y(i) = size_y + 1
           waste_y = waste_y-1
         else
           sizes_y(i) = size_y
         end if
-        !write(*,*) 'The size for y is', size_y
-      20 continue
+      end do
 
     end subroutine partition
 

@@ -479,11 +479,8 @@ contains
     real(fp_kind), dimension(isize, jsize, nbVar), intent(inout) :: data
 
     ! local variables
-    integer :: i,j,myRank
+    integer :: i,j
     real(fp_kind) :: tmp
-
-    myRank = coord_y*size_y_max + coord_x
-    write(*,*) myRank
 
     do j=1,jsize
        do i=1,isize
@@ -565,8 +562,8 @@ contains
 
        do j=ghostWidth+1,jsize_tot-ghostWidth
           write(10,*) data(ghostWidth+1:isize_tot-ghostWidth,j,iVar)
-       !do j=ghostWidth+1,jsize-ghostWidth
-          !write(10,*) data(ghostWidth+1:isize-ghostWidth,j,iVar)
+!       do j=ghostWidth+1,jsize-ghostWidth
+!          write(10,*) data(ghostWidth+1:isize-ghostWidth,j,iVar)
        end do
 
        write(10,'(a)') repeat(' ',4)//'</DataArray>'//endl
@@ -599,8 +596,6 @@ contains
 
     call updateS(data)
     call comm
-
-
     ! boundary xmin
     if(coord_x==0) then
      do iVar=1,nbVar
@@ -629,11 +624,10 @@ contains
       end do
     end if
 
-
     ! boundary xmax
     if(coord_x==size_x_max-1) then
     do iVar=1,nbVar
-       do i=isize-ghostWidth+1,isize
+       do i=1+isize-ghostWidth,isize
           sign=1.0
           if(boundary_type_xmax==1)then
              i0=2*isize-2*ghostWidth+1-i
@@ -686,7 +680,6 @@ contains
        end do
     end if
 
-
     ! boundary ymax
     if (coord_y == size_y_max-1) then
     do iVar=1,nbVar
@@ -724,53 +717,33 @@ contains
     integer :: ierr, i, j, iVar
     integer, dimension(MPI_STATUS_SIZE) :: status
 
-    !datatosend = 2.
+
 
     if(myRank == 0) then
-      !write(*,*) 'I am proc ', myRank, 'and I send u_tot to proc 1'
-      !call MPI_SEND(datatosend, 1, MPI_REAL, 1, 1, MPI_COMM_WORLD, ierr)
       call MPI_SEND(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, ierr)
-      !write(*,*) 'I am proc ', myRank, 'and I have sent u_tot to proc 1'
-      !call MPI_SEND(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, ierr)
     end if
  
-    !write(*,*) 'un truc'
-
     if(myRank > 0) then
-      !write(*,*) 'I am proc ', myRank, 'and I(m receiving u_tot from proc ', myRank-1
-      !call MPI_RECV(datatosend, 1, MPI_REAL, myRank-1, 1, MPI_COMM_WORLD, status, ierr)
       call MPI_RECV(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, myRank-1, 1, MPI_COMM_WORLD, status, ierr)
-      !write(*,*) 'I am proc ', myRank, 'and I receive u_tot from proc ', myRank-1
-      !call MPI_RECV(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, myRank-1, 1, MPI_COMM_WORLD, status, ierr)
       do iVar = 1,nbVar
         do i = 1+ghostWidth,isize-ghostWidth
           do j = 1+ghostWidth,jsize-ghostWidth
             u_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
-            !u2_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
           end do
         end do
       end do
-      !call MPI_SEND(datatosend, 1, MPI_REAL, modulo(myRank+1,nbTask), 1, MPI_COMM_WORLD, ierr)
       call MPI_SEND(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, modulo(myRank+1,nbTask), 1, MPI_COMM_WORLD, ierr) 
-      !write(*,*) 'I am proc ', myRank, 'and I send u_tot to proc ', modulo(myRank+1, nbTask)
-      !call MPI_SEND(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, modulo(myRank+1,nbTask), 1, MPI_COMM_WORLD, ierr)
     end if
 
-    !write(*,*) 'un autre truc'
-
     if(myRank == 0) then
-      !call MPI_RECV(datatosend, 1, MPI_REAL, nbTask-1, 1, MPI_COMM_WORLD, status, ierr)
       call MPI_RECV(u_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, nbTask-1, 1, MPI_COMM_WORLD, status, ierr)
       do iVar = 1,nbVar
         do i = 1+ghostWidth,isize-ghostWidth
           do j = 1+ghostWidth,jsize-ghostWidth
             u_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
-            !u2_tot(i+decx,j+decy,iVar) = u(i,j,iVar)
           end do
         end do
       end do
-      !write(*,*) 'I am proc ', myRank, 'and I receive u_tot from proc ', nbTask-1
-      !call MPI_RECV(u2_tot, isize_tot*jsize_tot*nbVar, MPI_REAL, 1, 1, MPI_COMM_WORLD, status, ierr)
     end if
 
     end subroutine

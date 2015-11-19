@@ -27,32 +27,25 @@ program euler2d
   call MPI_COMM_RANK(MPI_COMM_WORLD, myRank, ierr)
 
   call initHydroParameters(nbTask, myRank)
-  !call printHydroParameters()
+  if (myRank == 0 ) then
+    call printHydroParameters()
+  end if
 
   ! init domain
   call initHydroRun
   call compute_dt( dt, modulo(nStep,2) ) ! pas adaptatif, calcule a chaque fois pour stabilite
   call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
-  !write(*,*) 'I am proc ', myRank, 'and dt_min = ', dt_min
   call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
   dt=dt_min
-!  write(*,*) 'Initial value for dt ',dt,myRank
 
   ! init boundaries
   call initS
-!  call make_boundaries(u)
-
- ! nx = isize-2*ghostWidth
- ! ny = jsize-2*ghostWidth
-
 
   call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
   ! start computation
-  !write(*,*) 'Start computation....'
   call timerStart(total_timer)
 
-  !write(*,*) 'debut de la boucle'
   ! main loop
   do while (t < tEnd .and. nStep < nStepmax) ! boucle sur le temps et le nb de pas
      ! output
@@ -71,31 +64,28 @@ program euler2d
      call compute_dt( dt, modulo(nStep,2) )
      ! determine dt_min
      call MPI_REDUCE(dt, dt_min, 1, MPI_REAL, MPI_MIN, 0, MPI_COMM_WORLD, ierr)
-     !write(*,*) 'I am proc ', myRank, 'and dt = ', dt
      call MPI_BCAST(dt_min, 1, MPI_REAL, 0, MPI_COMM_WORLD, ierr)
      dt = dt_min
-     !write(*,*) 'I am proc ', myRank, 'and dt = ', dt
-
      call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
      ! perform one step integration
-
      call godunov_unsplit(dt)
      nStep = nStep+1
   end do
 
   ! end of computation
   call timerStop(total_timer)
-
   call cleanupHydroRun()
 
   ! print monitoring
+ if (myRank == 0) then
   write(*,*) 'total      time : ', total_timer%elapsed,     'secondes'
   write(*,*) 'compute    time : ', godunov_timer%elapsed,   'secondes', 100*godunov_timer%elapsed / total_timer%elapsed, '%'
   write(*,*) 'io         time : ', io_timer%elapsed,        'secondes', 100*io_timer%elapsed / total_timer%elapsed, '%'
   write(*,*) 'boundaries time : ', boundaries_timer%elapsed,'secondes', 100*boundaries_timer%elapsed / total_timer%elapsed, '%'
 
   write(*,*) 'Perf             : ',nStep*isize*jsize/total_timer%elapsed, ' number of cell-updates/s'
+ end if
 
   call MPI_Finalize(ierr)
 
